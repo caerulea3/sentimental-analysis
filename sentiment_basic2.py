@@ -6,6 +6,8 @@ from tqdm import tqdm as tqdm
 import matplotlib.pyplot as plt
 import pickle
 
+device = '/cpu:0'  
+
 def makedic(whole_comments):
     words = [x.split(" ") for x in whole_comments]
     flat = []
@@ -57,20 +59,21 @@ test_Y, val_Y, train_Y = np.array(testset)[:, 1],np.array(valset)[:, 1],np.array
 
 LR_LOW = 1e-9
 LR_HIGH = 1e-3
-lr_candidates = np.random.uniform(low = LR_LOW, high = LR_HIGH, size = (20,))
+lr_candidates = np.random.uniform(low = LR_LOW, high = LR_HIGH, size = (100,))
 his = []
+VERBOSE = 1
 for learning_rate in tqdm(lr_candidates):
-    VERBOSE = 1
     model = SentimentNetwork(10, 3)
     model.compile(optimizer = tf.keras.optimizers.Adam(learning_rate),
                     loss = 'sparse_categorical_crossentropy',
                     metrics=[tf.keras.metrics.sparse_categorical_accuracy])
-    model.fit(train_X, train_Y, batch_size = 64, epochs = 10, validation_data = (val_X, val_Y), verbose = VERBOSE)
+    model.fit(train_X, train_Y, batch_size = 64, epochs = 1, validation_data = (val_X, val_Y), verbose = VERBOSE)
     res = model.evaluate(val_X, val_Y, verbose = VERBOSE)
     if VERBOSE == 1:
         VERBOSE = 0
     his.append((learning_rate, res[1]))
-
+his = sorted(his, key=lambda l:l[0], reverse=True)
+his = np.array(his)
 plt.plot(his[:, 0], his[:, 1])
 plt.savefig("./experiment_result_{}_{}.png".format(LR_LOW, LR_HIGH))
 
