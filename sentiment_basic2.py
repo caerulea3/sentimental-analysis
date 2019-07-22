@@ -58,7 +58,7 @@ test_X, val_X, train_X = convert(testset, words_cnt, word2index), convert(valset
 test_Y, val_Y, train_Y = np.array(testset)[:, 1],np.array(valset)[:, 1],np.array(trainset)[:, 1]
 
 candidates = [[1e-9, 1e-8], [1e-8, 1e-7], [1e-7, 1e-6], [1e-6, 1e-5], [1e-5, 1e-4], [1e-4, 1e-3], [1e-3, 1e-2], [1e-2, 1e-1]]
-for LR_LOW, LR_HIGH in 
+for LR_LOW, LR_HIGH in candidates
     lr_candidates = np.random.uniform(low = LR_LOW, high = LR_HIGH, size = (100,))
     his = []
     VERBOSE = 1
