@@ -57,23 +57,23 @@ words_cnt = len(whole_wordcnt_dict)
 test_X, val_X, train_X = convert(testset, words_cnt, word2index), convert(valset, words_cnt, word2index), convert(trainset, words_cnt, word2index)
 test_Y, val_Y, train_Y = np.array(testset)[:, 1],np.array(valset)[:, 1],np.array(trainset)[:, 1]
 
-LR_LOW = 1e-9
-LR_HIGH = 1e-3
-lr_candidates = np.random.uniform(low = LR_LOW, high = LR_HIGH, size = (100,))
-his = []
-VERBOSE = 1
-for learning_rate in tqdm(lr_candidates):
-    model = SentimentNetwork(10, 3)
-    model.compile(optimizer = tf.keras.optimizers.Adam(learning_rate),
-                    loss = 'sparse_categorical_crossentropy',
-                    metrics=[tf.keras.metrics.sparse_categorical_accuracy])
-    model.fit(train_X, train_Y, batch_size = 64, epochs = 1, validation_data = (val_X, val_Y), verbose = VERBOSE)
-    res = model.evaluate(val_X, val_Y, verbose = VERBOSE)
-    if VERBOSE == 1:
-        VERBOSE = 0
-    his.append((learning_rate, res[1]))
-his = sorted(his, key=lambda l:l[0], reverse=True)
-his = np.array(his)
-plt.plot(his[:, 0], his[:, 1])
-plt.savefig("./experiment_result_{}_{}.png".format(LR_LOW, LR_HIGH))
+candidates = [[1e-9, 1e-8], [1e-8, 1e-7], [1e-7, 1e-6], [1e-6, 1e-5], [1e-5, 1e-4], [1e-4, 1e-3], [1e-3, 1e-2], [1e-2, 1e-1]]
+for LR_LOW, LR_HIGH in 
+    lr_candidates = np.random.uniform(low = LR_LOW, high = LR_HIGH, size = (100,))
+    his = []
+    VERBOSE = 1
+    for learning_rate in lr_candidates:
+        model = SentimentNetwork(10, 3)
+        model.compile(optimizer = tf.keras.optimizers.Adam(learning_rate),
+                        loss = 'sparse_categorical_crossentropy',
+                        metrics=[tf.keras.metrics.sparse_categorical_accuracy])
+        model.fit(train_X, train_Y, batch_size = 64, epochs = 5, validation_data = (val_X, val_Y), verbose = VERBOSE)
+        res = model.evaluate(val_X, val_Y, verbose = VERBOSE)
+        if VERBOSE == 1:
+            VERBOSE = 0
+        his.append((learning_rate, res[1]))
+    his = sorted(his, key=lambda l:l[0], reverse=True)
+    his = np.array(his)
+    plt.plot(his[:, 0], his[:, 1])
+    plt.savefig("./experiment_result_{}_{}.png".format(LR_LOW, LR_HIGH))
 
