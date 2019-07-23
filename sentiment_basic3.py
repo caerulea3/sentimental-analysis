@@ -73,6 +73,9 @@ for LR_LOW, LR_HIGH in candidates:
     his = []
     VERBOSE = 1
     for learning_rate in lr_candidates:
+        print("Testing {} / {} in range ({:2E}, {:2E}".format(
+            lr_candidates.index(learning_rate), len(lr_candidates), LR_LOW, LR_HIGH
+        ))
         model = SentimentNetwork(10, 3)
         model.compile(optimizer = tf.keras.optimizers.Adam(learning_rate),
                         loss = 'sparse_categorical_crossentropy',

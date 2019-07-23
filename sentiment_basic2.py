@@ -1,15 +1,16 @@
-from data_preprocessor import *
+import os
+import pickle
+
 import numpy as numpy
 import pandas as pd
 import tensorflow as tf
 from tqdm import tqdm as tqdm
 import matplotlib.pyplot as plt
-import pickle
+import multiprocessing as mp
 
-from concurrent import futures
+from data_preprocessor import *
 
 device = 'cpu:/0'
-
 ACTIVE = True
 
 def makedic(whole_comments):
@@ -34,6 +35,15 @@ def convert(batch, vectorsize, word2index):
         result[:, i] += vector.T
     return result.T
 
+totalset, testset, valset, trainset = sentiment_preprocessor("./tweet_processed.txt", "./sentiment2.xlsx")
+print(len(totalset), len(trainset), len(valset), len(testset))
+whole_wordcnt_dict, word2index = makedic(totalset)
+words_cnt = len(whole_wordcnt_dict)
+
+test_X, val_X, train_X = convert(testset, words_cnt, word2index), convert(valset, words_cnt, word2index), convert(trainset, words_cnt, word2index)
+test_Y, val_Y, train_Y = np.array(testset)[:, 1],np.array(valset)[:, 1],np.array(trainset)[:, 1]
+
+
 # class SentimentNetwork():
 
 class SentimentNetwork(tf.keras.Model):
@@ -57,7 +67,7 @@ def LearningRateTest(lr_candidates):
     LR_LOW, LR_HIGH = lr_candidates
     lr_candidates = np.random.uniform(low = LR_LOW, high = LR_HIGH, size = (50 if ACTIVE else 2,)) 
     for learning_rate in lr_candidates:
-        print("Test Start With lr = {:.2E}".format(learning_rate))
+        print("Test Start With lr = {:.2E} on PID={}".format(learning_rate, os.getpid()))
         VERBOSE = 0
         model = SentimentNetwork(10, 3)
         model.compile(optimizer = tf.keras.optimizers.Adam(learning_rate),
@@ -66,42 +76,36 @@ def LearningRateTest(lr_candidates):
         model.fit(train_X, train_Y, batch_size = 64, epochs = (5 if ACTIVE else 1), validation_data = (val_X, val_Y), verbose = VERBOSE)
         res = model.evaluate(val_X, val_Y, verbose = VERBOSE)
         his.append((learning_rate, res[1]))
-    # try:
-    #     his_np = np.array(his)
-    #     plt.plot(his_np[:, 0], his_np[:, 1])
-    #     plt.savefig("./testres_{0:.2E}_{1:.2E}.png".format(LR_LOW, LR_HIGH))
-    # except Exception as e:
-    #     print(e)
+    try:
+        his = sorted(his, key=lambda l:l[0], reverse=True)
+        his_np = np.array(his)
+        plt.plot(his_np[:, 0], his_np[:, 1])
+        plt.savefig("./experiment/testres_{0:.2E}_{1:.2E}.png".format(LR_LOW, LR_HIGH))
+    except Exception as e:
+        print(e)
     return his
 
 
 
-totalset, testset, valset, trainset = sentiment_preprocessor("./tweet_processed.txt", "./sentiment2.xlsx")
-print(len(totalset), len(trainset), len(valset), len(testset))
-whole_wordcnt_dict, word2index = makedic(totalset)
-words_cnt = len(whole_wordcnt_dict)
+if __name__ == '__main__':
+    mp.freeze_support()
+    mp.set_start_method('spawn')
 
-test_X, val_X, train_X = convert(testset, words_cnt, word2index), convert(valset, words_cnt, word2index), convert(trainset, words_cnt, word2index)
-test_Y, val_Y, train_Y = np.array(testset)[:, 1],np.array(valset)[:, 1],np.array(trainset)[:, 1]
+    lr_low, lr_high = 1e-9, (1e-9 * (10**0.25))
+    lr_ranges = []
+    for i in range(25 if ACTIVE else 2):
+        lr_ranges.append((lr_low, lr_high))
+        lr_low *= (10**0.25)
+        lr_high *= (10**0.25)
 
-lr_low, lr_high = 1e-9, (1e-9 * (10**0.25))
-lr_ranges = []
-for i in range(25 if ACTIVE else 2):
-    lr_ranges.append((lr_low, lr_high))
-    lr_low *= (10**0.25)
-    lr_high *= (10**0.25)
+    with mp.Pool(processes=16 if ACTIVE else 2) as pool:
+        res = pool.map(LearningRateTest, lr_ranges)
+        res2 = [result[0] for result in res]
+    
+    print(res)
 
-
-# workers = min(16 if ACTIVE else 2, len(lr_ranges))
-# with futures.ThreadPoolExecutor(workers) as executor:
-with futures.ProcessPoolExecutor() as executor:
-    res = executor.map(LearningRateTest, lr_ranges)
-
-print((res))
-print(dir(res))
-
-# with open("./testresult.pkl", 'wb') as f:
-#     pickle.dump(list(res), f)
+    with open("./testresult.pkl", 'wb') as f:
+        pickle.dump(res, f)
 
 
 
