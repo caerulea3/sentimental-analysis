@@ -67,7 +67,8 @@ def LearningRateTest(lr_candidates):
     LR_LOW, LR_HIGH = lr_candidates
     lr_candidates = np.random.uniform(low = LR_LOW, high = LR_HIGH, size = (50 if ACTIVE else 2,)) 
     for learning_rate in lr_candidates:
-        print("Test Start With lr = {:.2E} on PID={}".format(learning_rate, os.getpid()))
+        print("Testing {} / {} in range ({:2E}, {:2E}), on PID = {}".format(
+            lr_candidates.index(learning_rate), len(lr_candidates), LR_LOW, LR_HIGH, os.getpid()))
         VERBOSE = 0
         model = SentimentNetwork(10, 3)
         model.compile(optimizer = tf.keras.optimizers.Adam(learning_rate),
