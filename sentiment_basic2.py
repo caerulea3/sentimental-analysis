@@ -61,7 +61,8 @@ class SentimentNetwork(tf.keras.Model):
         x = self.fc3(x)
         return x
 
-def LearningRateTest(lr_candidates):
+def LearningRateTest(lr_candidate_enum):
+    cand_num, lr_candidates = lr_candidate_enum
     his = []
     LR_LOW, LR_HIGH = lr_candidates
     lr_candidates = np.random.uniform(low = LR_LOW, high = LR_HIGH, size = (25 if ACTIVE else 2,)) 
@@ -78,14 +79,22 @@ def LearningRateTest(lr_candidates):
         res = model.evaluate(val_X, val_Y, verbose = VERBOSE)
         his.append((learning_rate, res[1]))
     try:
+        with open("./experiment_pkl/{}_testres_{:.2E}_{:.2E}.pkl".format(cand_num, LR_LOW, LR_HIGH), 'wb') as f:
+            pickle.dump(his, f)
+    except Exception as e:
+        print("LearningRateTest Error(Pkl Write):: ", e)
+    
+    try:
         his = sorted(his, key=lambda l:l[0], reverse=True)
         his_np = np.array(his)
         plt.plot(his_np[:, 0], his_np[:, 1])
-        with open("./experiment/testres_{0:.2E}_{1:.2E}.png".format(LR_LOW, LR_HIGH), 'wb') as f:
+        with open("./experiment/{}_testres_{:.2E}_{:.2E}.png".format(cand_num, LR_LOW, LR_HIGH), 'wb') as f:
             plt.savefig(f)
     except Exception as e:
-        print(e)
-    return his
+        print("LearningRateTest Error(Pyplot):: ", e)
+
+
+    return list(his)
 
 
 
@@ -101,6 +110,7 @@ if __name__ == '__main__':
         lr_high *= (10**0.25)
 
     lr_ranges *=2
+    lr_ranges = [(i, lrr) for (i, lrr) in enumerate(lr_ranges)]
 
     with mp.Pool(processes=16 if ACTIVE else 2) as pool:
         res = pool.map(LearningRateTest, lr_ranges)
@@ -108,7 +118,7 @@ if __name__ == '__main__':
     
     print(res)
 
-    with open("./testresult.pkl", 'wb') as f:
+    with open("./Whole_testresult.pkl", 'wb') as f:
         pickle.dump(res, f)
 
 
