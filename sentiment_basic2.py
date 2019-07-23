@@ -50,8 +50,8 @@ class SentimentNetwork(tf.keras.Model):
         super(SentimentNetwork, self).__init__()
         initializer = tf.initializers.VarianceScaling(scale = 2.0)
         self.addings = tf.keras.layers.Dense(hidden_size, kernel_initializer = tf.keras.initializers.zeros())
-        self.fc1 = tf.keras.layers.Dense(2000, kernel_initializer = initializer,  activation = 'sigmoid')
-        self.fc2 = tf.keras.layers.Dense(2000, kernel_initializer = initializer,  activation = 'sigmoid')
+        self.fc1 = tf.keras.layers.Dense(2048, kernel_initializer = initializer,  activation = 'sigmoid')
+        self.fc2 = tf.keras.layers.Dense(1024, kernel_initializer = initializer,  activation = 'sigmoid')
         self.fc3 = tf.keras.layers.Dense(num_classes, kernel_initializer = initializer,  activation = 'sigmoid')
 
     def call(self, x):
@@ -64,7 +64,7 @@ class SentimentNetwork(tf.keras.Model):
 def LearningRateTest(lr_candidates):
     his = []
     LR_LOW, LR_HIGH = lr_candidates
-    lr_candidates = np.random.uniform(low = LR_LOW, high = LR_HIGH, size = (50 if ACTIVE else 2,)) 
+    lr_candidates = np.random.uniform(low = LR_LOW, high = LR_HIGH, size = (25 if ACTIVE else 2,)) 
     for i in range(len(lr_candidates)):
         learning_rate = lr_candidates[i]
         print("Testing {} / {} in range ({:2E}, {:2E}), on PID = {}".format(
@@ -74,7 +74,7 @@ def LearningRateTest(lr_candidates):
         model.compile(optimizer = tf.keras.optimizers.Adam(learning_rate),
                         loss = 'sparse_categorical_crossentropy',
                         metrics=[tf.keras.metrics.sparse_categorical_accuracy])
-        model.fit(train_X, train_Y, batch_size = 64, epochs = (5 if ACTIVE else 1), validation_data = (val_X, val_Y), verbose = VERBOSE)
+        model.fit(train_X, train_Y, batch_size = 32, epochs = (5 if ACTIVE else 1), validation_data = (val_X, val_Y), verbose = VERBOSE)
         res = model.evaluate(val_X, val_Y, verbose = VERBOSE)
         his.append((learning_rate, res[1]))
     try:
@@ -99,6 +99,8 @@ if __name__ == '__main__':
         lr_ranges.append((lr_low, lr_high))
         lr_low *= (10**0.25)
         lr_high *= (10**0.25)
+
+    lr_ranges *=2
 
     with mp.Pool(processes=16 if ACTIVE else 2) as pool:
         res = pool.map(LearningRateTest, lr_ranges)
