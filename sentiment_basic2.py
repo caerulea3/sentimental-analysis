@@ -79,7 +79,10 @@ def LearningRateTest(lr_candidate_enum):
         res = model.evaluate(val_X, val_Y, verbose = VERBOSE)
         his.append((learning_rate, res[1]))
     try:
-        with open("./experiment_pkl/{}_testres_{:.2E}_{:.2E}.pkl".format(cand_num, LR_LOW, LR_HIGH), 'wb') as f:
+        filename = "./experiment_pkl/{}_testres_{:.2E}_{:.2E}.pkl".format(cand_num, LR_LOW, LR_HIGH)
+        if ACTIVE:
+            filename = "~/sentimental_analysis/experiment_pkl/{}_testres_{:.2E}_{:.2E}.pkl".format(cand_num, LR_LOW, LR_HIGH)
+        with open(filename, 'wb') as f:
             pickle.dump(his, f)
     except Exception as e:
         print("LearningRateTest Error(Pkl Write):: ", e)
@@ -88,7 +91,10 @@ def LearningRateTest(lr_candidate_enum):
         his = sorted(his, key=lambda l:l[0], reverse=True)
         his_np = np.array(his)
         plt.plot(his_np[:, 0], his_np[:, 1])
-        with open("./experiment/{}_testres_{:.2E}_{:.2E}.png".format(cand_num, LR_LOW, LR_HIGH), 'wb') as f:
+        filename = "./experiment/{}_testres_{:.2E}_{:.2E}.png".format(cand_num, LR_LOW, LR_HIGH)
+        if ACTIVE:
+            filename = "~/sentimental_analysis/experiment/{}_testres_{:.2E}_{:.2E}.png".format(cand_num, LR_LOW, LR_HIGH)
+        with open(filename, 'wb') as f:
             plt.savefig(f)
     except Exception as e:
         print("LearningRateTest Error(Pyplot):: ", e)
