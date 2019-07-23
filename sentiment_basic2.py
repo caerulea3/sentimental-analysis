@@ -11,7 +11,7 @@ import multiprocessing as mp
 from data_preprocessor import *
 
 device = 'cpu:/0'
-ACTIVE = True
+ACTIVE = False
 
 def makedic(whole_comments):
     words = [x.split(" ") for x in whole_comments]
@@ -85,15 +85,16 @@ def LearningRateTest(lr_candidate_enum):
     except Exception as e:
         print("LearningRateTest Error(Pkl Write):: ", e)
     
-    try:
-        his = sorted(his, key=lambda l:l[0], reverse=True)
-        his_np = np.array(his)
-        plt.plot(his_np[:, 0], his_np[:, 1])
-        filename = os.getcwd() + "/experiment/{}_testres_{:.2E}_{:.2E}.png".format(cand_num, LR_LOW, LR_HIGH)
-        with open(filename, 'wb') as f:
-            plt.savefig(f)
-    except Exception as e:
-        print("LearningRateTest Error(Pyplot):: ", e)
+#    try:
+#        his = sorted(his, key=lambda l:l[0], reverse=True)
+#        his_np = np.array(his)
+#        plt.plot(his_np[:, 0], his_np[:, 1])
+#        filename = os.getcwd() + "/experiment/{}_testres_{:.2E}_{:.2E}.png".format(cand_num, LR_LOW, LR_HIGH)
+#        f = open(filename, 'wb') 
+#        plt.savefig(f)
+#        f.close()
+#    except Exception as e:
+#        print("LearningRateTest Error(Pyplot):: ", e)
 
 
     return list(his)
