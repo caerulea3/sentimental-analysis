@@ -6,11 +6,10 @@ from tqdm import tqdm as tqdm
 import matplotlib.pyplot as plt
 import pickle
 
-from concurrent import futures
-
-device = 'cpu:/0'
-
+device = '/cpu:0'  
 ACTIVE = True
+
+tf.config.threading.set_intra_op_parallelism_threads(16 if ACTIVE else 1)
 
 def makedic(whole_comments):
     words = [x.split(" ") for x in whole_comments]
@@ -52,29 +51,6 @@ class SentimentNetwork(tf.keras.Model):
         x = self.fc3(x)
         return x
 
-def LearningRateTest(lr_candidates):
-    his = []
-    LR_LOW, LR_HIGH = lr_candidates
-    lr_candidates = np.random.uniform(low = LR_LOW, high = LR_HIGH, size = (50 if ACTIVE else 2,)) 
-    for learning_rate in lr_candidates:
-        print("Test Start With lr = {:.2E}".format(learning_rate))
-        VERBOSE = 0
-        model = SentimentNetwork(10, 3)
-        model.compile(optimizer = tf.keras.optimizers.Adam(learning_rate),
-                        loss = 'sparse_categorical_crossentropy',
-                        metrics=[tf.keras.metrics.sparse_categorical_accuracy])
-        model.fit(train_X, train_Y, batch_size = 64, epochs = (5 if ACTIVE else 1), validation_data = (val_X, val_Y), verbose = VERBOSE)
-        res = model.evaluate(val_X, val_Y, verbose = VERBOSE)
-        his.append((learning_rate, res[1]))
-    # try:
-    #     his_np = np.array(his)
-    #     plt.plot(his_np[:, 0], his_np[:, 1])
-    #     plt.savefig("./testres_{0:.2E}_{1:.2E}.png".format(LR_LOW, LR_HIGH))
-    # except Exception as e:
-    #     print(e)
-    return his
-
-
 
 totalset, testset, valset, trainset = sentiment_preprocessor("./tweet_processed.txt", "./sentiment2.xlsx")
 print(len(totalset), len(trainset), len(valset), len(testset))
@@ -84,24 +60,33 @@ words_cnt = len(whole_wordcnt_dict)
 test_X, val_X, train_X = convert(testset, words_cnt, word2index), convert(valset, words_cnt, word2index), convert(trainset, words_cnt, word2index)
 test_Y, val_Y, train_Y = np.array(testset)[:, 1],np.array(valset)[:, 1],np.array(trainset)[:, 1]
 
+
 lr_low, lr_high = 1e-9, (1e-9 * (10**0.25))
-lr_ranges = []
+candidates = []
 for i in range(25 if ACTIVE else 2):
-    lr_ranges.append((lr_low, lr_high))
+    candidates.append((lr_low, lr_high))
     lr_low *= (10**0.25)
     lr_high *= (10**0.25)
 
+for LR_LOW, LR_HIGH in candidates:
+    lr_candidates = np.random.uniform(low = LR_LOW, high = LR_HIGH, size = (50 if ACTIVE else 2,))
+    his = []
+    VERBOSE = 1
+    for learning_rate in lr_candidates:
+        model = SentimentNetwork(10, 3)
+        model.compile(optimizer = tf.keras.optimizers.Adam(learning_rate),
+                        loss = 'sparse_categorical_crossentropy',
+                        metrics=[tf.keras.metrics.sparse_categorical_accuracy])
+        model.fit(train_X, train_Y, batch_size = 64, epochs = 5 if ACTIVE else 1, validation_data = (val_X, val_Y), verbose = VERBOSE)
+        res = model.evaluate(val_X, val_Y, verbose = VERBOSE)
+        if VERBOSE == 1:
+            VERBOSE = 0
+        his.append((learning_rate, res[1]))
+    his = sorted(his, key=lambda l:l[0], reverse=True)
+    his = np.array(his)
+    with open("./testresult.pkl", 'wb') as f:
+        pickle.dump(his, f)
 
-# workers = min(16 if ACTIVE else 2, len(lr_ranges))
-# with futures.ThreadPoolExecutor(workers) as executor:
-with futures.ProcessPoolExecutor() as executor:
-    res = executor.map(LearningRateTest, lr_ranges)
-
-print((res))
-print(dir(res))
-
-# with open("./testresult.pkl", 'wb') as f:
-#     pickle.dump(list(res), f)
-
-
+    plt.plot(his[:, 0], his[:, 1])
+    plt.savefig("./experiment/experiment_result_{:2E}_{:2E}.png".format(LR_LOW, LR_HIGH))
 
