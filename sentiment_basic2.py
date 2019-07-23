@@ -11,7 +11,7 @@ import multiprocessing as mp
 from data_preprocessor import *
 
 device = 'cpu:/0'
-ACTIVE = True
+ACTIVE = False
 
 def makedic(whole_comments):
     words = [x.split(" ") for x in whole_comments]
@@ -36,7 +36,6 @@ def convert(batch, vectorsize, word2index):
     return result.T
 
 totalset, testset, valset, trainset = sentiment_preprocessor("./tweet_processed.txt", "./sentiment2.xlsx")
-print(len(totalset), len(trainset), len(valset), len(testset))
 whole_wordcnt_dict, word2index = makedic(totalset)
 words_cnt = len(whole_wordcnt_dict)
 
@@ -66,10 +65,10 @@ def LearningRateTest(lr_candidates):
     his = []
     LR_LOW, LR_HIGH = lr_candidates
     lr_candidates = np.random.uniform(low = LR_LOW, high = LR_HIGH, size = (50 if ACTIVE else 2,)) 
-    for i in len(lr_candidates):
-        leanring_rate = lr_candidates[i]
+    for i in range(len(lr_candidates)):
+        learning_rate = lr_candidates[i]
         print("Testing {} / {} in range ({:2E}, {:2E}), on PID = {}".format(
-            i, len(lr_candidates), LR_LOW, LR_HIGH, os.getpid()))
+            i+1, len(lr_candidates), LR_LOW, LR_HIGH, os.getpid()))
         VERBOSE = 0
         model = SentimentNetwork(10, 3)
         model.compile(optimizer = tf.keras.optimizers.Adam(learning_rate),

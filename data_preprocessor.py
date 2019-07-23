@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 def sentiment_preprocessor(f1, f2, threshold = 1):
     raw = pd.read_csv(f1, sep = '\t')
-    print(raw.columns)
+    # print(raw.columns)
 
     #remove duplicated items
     raw = raw[raw.duplicated(subset = 'id', keep = False) == False]
