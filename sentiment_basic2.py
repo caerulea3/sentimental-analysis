@@ -11,7 +11,7 @@ import multiprocessing as mp
 from data_preprocessor import *
 
 device = 'cpu:/0'
-ACTIVE = False
+ACTIVE = True
 
 def makedic(whole_comments):
     words = [x.split(" ") for x in whole_comments]
